@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MilkyWay Hub — Palmistry · Health · Eyesight · Mindset · Friendship · Games</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --bg1:#050913;--bg2:#0a1226;--card:#0b1a33;--accent:#06b6d4;--text:#e8f2fb;--muted:#a5bdd3;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:radial-gradient(1200px 700px at 20% -10%,#0f1f3c 0%,transparent 60%), radial-gradient(1000px 600px at 100% 0%,#0c1a31 0%,transparent 65%),linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:Inter,system-ui,Arial}
+#starfield{position:fixed;inset:0;z-index:0;pointer-events:none}
+.app{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:22px}
+header{text-align:center}
+h1{margin:0 0 6px;color:#9ee8f7;text-shadow:0 10px 40px rgba(6,182,212,.12)}
+.sub{color:var(--muted);font-size:13px}
+nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.tab{background:linear-gradient(180deg,#0c172c,#0d213c);border:1px solid rgba(255,255,255,.06);padding:8px 14px;border-radius:12px;color:#bfe8f4;cursor:pointer}
+.tab:hover{background:var(--accent);color:#02111a}
+.card{background:linear-gradient(180deg, rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 10px 40px rgba(2,6,23,.6)}
+label{font-size:13px;color:var(--muted);display:block;margin-top:8px}
+input,select,textarea,button{border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--text);padding:8px;border-radius:10px}
+input,select,textarea{width:100%}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.col{flex:1;min-width:280px}
+.result{background:#061626;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px;margin-top:10px}
+.video{width:100%;max-height:360px;background:#000;border-radius:12px}
+.chart{max-width:100%;height:280px;margin-top:12px}
+footer{margin:18px 0;color:var(--muted);text-align:center}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#0c2038;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#8fd8f0}
+.kbd{padding:2px 6px;border-radius:6px;background:#0b213b;border:1px solid rgba(255,255,255,.08);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:960px){.grid2{grid-template-columns:1fr}}
+/* games */
+canvas.dodge,canvas.game{background:linear-gradient(180deg,#04111a,#071e2d);border-radius:12px;display:block;margin:0 auto}
+table#sosGrid{border-collapse:collapse;margin:8px auto}
+#sosGrid td{width:56px;height:56px;border:2px solid rgba(255,255,255,.08);text-align:center;font-size:22px;cursor:pointer}
+#ludoBoard{display:grid;grid-template-columns:repeat(20,22px);gap:2px;justify-content:center;margin:8px 0}
+#ludoBoard div{width:22px;height:22px;background:#0e243f;border:1px solid rgba(255,255,255,.06);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px}
+#ludoBoard .me{background:#21e6c1}
+#ludoBoard .ai{background:#e94560}
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+
+<div class="app">
+  <header>
+    <h1>MilkyWay Hub ✨</h1>
+    <div class="sub">Palmistry · Eyesight · Mindset · Friendship · Health · Games — with webcam access</div>
+    <nav>
+      <button class="tab" onclick="show('palm')">Palmistry</button>
+      <button class="tab" onclick="show('eyes')">Eyesight</button>
+      <button class="tab" onclick="show('mind')">Mindset</button>
+      <button class="tab" onclick="show('friend')">Friendship</button>
+      <button class="tab" onclick="show('health')">PCOD & Heart</button>
+      <button class="tab" onclick="show('love')">Love %</button>
+      <button class="tab" onclick="show('games')">Games</button>
+      <button class="tab" onclick="show('cam')">Camera</button>
+    </nav>
+    <div class="badge">Tips: run on HTTPS or localhost for camera access.</div>
+  </header>
+
+  <!-- PALMISTRY -->
+  <section id="palm" class="card" style="display:block">
+    <h2>✋ Palmistry — Realistic Heuristics with Charts</h2>
+    <div class="sub">Boy → <b>Right hand</b> | Girl → <b>Left hand</b>. Capture your palm, then analyze. We compute line strengths using image statistics and show % with graphs (educational use only).</div>
+
+    <div class="grid2">
+      <div class="col">
+        <label>Gender</label>
+        <select id="palmGender">
+          <option value="boy">Boy — show RIGHT hand</option>
+          <option value="girl">Girl — show LEFT hand</option>
+          <option value="other">Other — show dominant hand</option>
+        </select>
+
+        <video id="palmVideo" class="video" autoplay playsinline></video>
+        <div class="controls">
+          <button class="tab" onclick="startCamera('palmVideo')">Start Camera</button>
+          <button class="tab" onclick="capturePalm()">Capture Palm</button>
+          <button class="tab" onclick="analyzePalm()">Analyze</button>
+        </div>
+      </div>
+
+      <div class="col">
+        <canvas id="palmCanvas" width="480" height="360" style="background:#04111a;border-radius:12px"></canvas>
+        <div id="palmInfo" class="result">
+          <b>Instructions</b>
+          <ul>
+            <li>Place the correct hand (Boy: Right, Girl: Left) in bright light.</li>
+            <li>Keep palm flat, whole palm visible from wrist to finger base.</li>
+            <li>Hold steady and press <b>Capture</b> → then <b>Analyze</b>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="palmChart" class="chart"></canvas>
+  </section>
+
+  <!-- EYESIGHT -->
+  <section id="eyes" class="card" style="display:none">
+    <h2>👁️ Eyesight — Letter Test with +/− Sight Analysis</h2>
+    <div class="sub">We measure accuracy & response time at decreasing sizes. Tendency: <b>− (myopia)</b> if small letters are hard; <b>+ (hyperopia)</b> if big letters are okay but mid-size slow.</div>
+    <div class="controls">
+      <button class="tab" onclick="startCamera('eyesVideo')">Start Camera</button>
+      <button class="tab" onclick="beginEyeTest()">Begin Test</button>
+    </div>
+    <video id="eyesVideo" class="video" autoplay playsinline></video>
+    <div id="eyeArea" class="result"></div>
+    <div id="eyeStats" class="result"></div>
+    <canvas id="eyeChart" class="chart"></canvas>
+  </section>
+
+  <!-- MINDSET -->
+  <section id="mind" class="card" style="display:none">
+    <h2>🧠 Mindset Analysis — Name + Face + Palm Fusion</h2>
+    <div class="sub">Enter a name. Optional: open camera and detect face mood. If you analyzed palmistry, we’ll use those stats to refine character.</div>
+    <div class="grid2">
+      <div class="col">
+        <label>Name</label><input id="mindName" placeholder="Your name"/>
+        <label>Self-rated stress (0–10)</label><input id="mindStress" type="number" min="0" max="10" value="3"/>
+        <div class="controls">
+          <button class="tab" onclick="startCamera('mindVideo')">Open Camera</button>
+          <button class="tab" onclick="detectFaceEmotion('mindVideo')">Detect Face Emotion</button>
+          <button class="tab" onclick="runMindset()">Analyze Mindset</button>
+        </div>
+        <video id="mindVideo" class="video" autoplay playsinline></video>
+        <div id="mindOut" class="result"></div>
+      </div>
+      <div class="col">
+        <canvas id="mindChart" class="chart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- FRIENDSHIP -->
+  <section id="friend" class="card" style="display:none">
+    <h2>🤝 Friendship — Bond Strength + Fun Shapes</h2>
+    <div class="row">
+      <div class="col"><label>Name A</label><input id="fa" placeholder="e.g., Sara"/></div>
+      <div class="col"><label>Name B</label><input id="fb" placeholder="e.g., Meera"/></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>Social (1–5)</label><input id="aSocial" type="number" min="1" max="5" value="3"/></div>
+      <div class="col"><label>Social (1–5)</label><input id="bSocial" type="number" min="1" max="5" value="3"/></div>
+      <div class="col"><label>Planning (1–5)</label><input id="aPlan" type="number" min="1" max="5" value="3"/></div>
+      <div class="col"><label>Planning (1–5)</label><input id="bPlan" type="number" min="1" max="5" value="3"/></div>
+      <div class="col"><label>Trust (1–5)</label><input id="aTrust" type="number" min="1" max="5" value="4"/></div>
+      <div class="col"><label>Trust (1–5)</label><input id="bTrust" type="number" min="1" max="5" value="4"/></div>
+    </div>
+    <div class="controls"><button class="tab" onclick="runFriend()">Compute Bond</button></div>
+    <div id="friendOut" class="result"></div>
+    <div class="grid2">
+      <canvas id="friendChart" class="chart"></canvas>
+      <canvas id="friendRadar" class="chart"></canvas>
+    </div>
+  </section>
+
+  <!-- HEALTH -->
+  <section id="health" class="card" style="display:none">
+    <h2>🩺 PCOD Probability & Heartbeat</h2>
+    <div class="row">
+      <div class="col"><label>Name</label><input id="pcodName" placeholder="Patient name"/></div>
+      <div class="col"><label>Age</label><input id="pcodAge" type="number" value="25"/></div>
+      <div class="col"><label>BMI</label><input id="pcodBMI" type="number" value="22"/></div>
+      <div class="col"><label>Cycle</label><select id="pcodCycle"><option value="regular">Regular</option><option value="irregular">Irregular</option></select></div>
+    </div>
+    <label>Symptoms</label>
+    <div class="row">
+      <label><input type="checkbox" id="pcodSym1"> Irregular periods</label>
+      <label><input type="checkbox" id="pcodSym2"> Hirsutism/Acne</label>
+      <label><input type="checkbox" id="pcodSym3"> Sudden weight gain</label>
+    </div>
+    <div class="controls">
+      <button class="tab" onclick="runPCOD()">Run PCOD</button>
+      <button class="tab" onclick="startPulse('pcodPulseVideo')">Measure Pulse (~12s)</button>
+      <button class="tab" onclick="startCamera('pcodPulseVideo')">Start Camera</button>
+    </div>
+    <video id="pcodPulseVideo" class="video" autoplay playsinline></video>
+    <div id="pcodOut" class="result"></div>
+    <canvas id="pcodChart" class="chart"></canvas>
+  </section>
+
+  <!-- LOVE % -->
+  <section id="love" class="card" style="display:none">
+    <h2>💗 Love Percentage & Compatibility</h2>
+    <div class="sub">Enter any two names. We compute compatibility using multiple statistical features and show a breakdown & donut chart.</div>
+    <div class="row">
+      <div class="col"><label>Name 1</label><input id="loveA" placeholder="sara"/></div>
+      <div class="col"><label>Name 2</label><input id="loveB" placeholder="meera"/></div>
+    </div>
+    <div class="controls">
+      <button class="tab" onclick="runLove()">Compute Compatibility</button>
+      <button class="tab" onclick="randLove()">Random Pair</button>
+    </div>
+    <div id="loveOut" class="result"></div>
+    <div class="grid2">
+      <canvas id="loveBars" class="chart"></canvas>
+      <canvas id="loveDonut" class="chart"></canvas>
+    </div>
+    <div id="loveSteps" class="result"></div>
+  </section>
+
+  <!-- GAMES -->
+  <section id="games" class="card" style="display:none">
+    <h2>🎮 Mini Arcade</h2>
+    <div class="sub">All lightweight, play-in-page games. Hand Gestures uses webcam motion.</div>
+
+    <div class="grid2">
+      <!-- Hand Gesture -->
+      <div class="col">
+        <h3>🖐️ Hand Gestures — Wave to collect stars</h3>
+        <div class="controls">
+          <button class="tab" onclick="startGestureGame()">Start</button>
+        </div>
+        <video id="gestVid" class="video" autoplay playsinline></video>
+        <div id="gestOut" class="result">Score: <b id="gestScore">0</b> — Wave strongly to earn points!</div>
+      </div>
+
+      <!-- Memory -->
+      <div class="col">
+        <h3>🧠 Memory 4×4</h3>
+        <div id="memGrid" class="result" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"></div>
+        <div class="controls"><button class="tab" onclick="resetMemory()">Reset</button></div>
+      </div>
+
+      <!-- Math Quiz -->
+      <div class="col">
+        <h3>🔢 30-sec Math Quiz</h3>
+        <div class="result" id="mqArea">
+          <div>Time: <b id="mqTime">30</b>s | Score: <b id="mqScore">0</b></div>
+          <div id="mqQ" style="font-size:22px;margin:8px 0"></div>
+          <input id="mqAns" placeholder="Type answer and press Enter"/>
+          <div class="controls"><button class="tab" onclick="startMQ()">Start</button></div>
+        </div>
+      </div>
+
+      <!-- Dodge Ball -->
+      <div class="col">
+        <h3>🏃 Dodge Ball</h3>
+        <canvas id="dodgeCanvas" width="480" height="320" class="dodge"></canvas>
+        <div class="controls"><div>Score: <b id="dodgeScore">0</b></div><button class="tab" onclick="startDodge()">Start</button></div>
+      </div>
+
+      <!-- SOS -->
+      <div class="col">
+        <h3>🟦 SOS (vs Computer)</h3>
+        <div class="controls">
+          <label class="sub">Place:</label>
+          <select id="sosSymbol"><option value="S">S</option><option value="O">O</option></select>
+          <button class="tab" onclick="resetSOS()">Reset</button>
+        </div>
+        <table id="sosGrid"></table>
+        <div id="sosResult" class="result"></div>
+      </div>
+
+      <!-- Candy Catch -->
+      <div class="col">
+        <h3>🍬 Candy Catch</h3>
+        <canvas id="candyCanvas" width="420" height="300" class="game"></canvas>
+        <div class="controls"><button class="tab" onclick="startCandy()">Start</button> Score: <b id="candyScore">0</b></div>
+      </div>
+
+      <!-- Robot Maze -->
+      <div class="col">
+        <h3>🤖 Robot Maze</h3>
+        <canvas id="robotCanvas" width="360" height="300" class="game"></canvas>
+        <div class="sub">Use ← ↑ → ↓ to reach the goal square.</div>
+        <div class="controls"><button class="tab" onclick="startRobot()">Start</button></div>
+      </div>
+
+      <!-- Mini Ludo -->
+      <div class="col">
+        <h3>🎲 Mini Ludo (Race 1×1)</h3>
+        <div class="controls"><button class="tab" onclick="rollLudo()">Roll Dice</button> <span>Dice: <b id="ludoDice">—</b></span></div>
+        <div id="ludoBoard"></div>
+        <div class="result" id="ludoOut"></div>
+      </div>
+
+      <!-- Horror Hunt -->
+      <div class="col">
+        <h3>👻 Horror Hunt</h3>
+        <div class="result">
+          <div id="hhPrompt">Type the ghost name to banish!</div>
+          <input id="hhInput" placeholder="type here" onkeyup="checkHorror(event)"/>
+          <div id="hhOut" class="sub"></div>
+        </div>
+        <div class="controls"><button class="tab" onclick="startHorror()">Start</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAMERA -->
+  <section id="cam" class="card" style="display:none">
+    <h2>📷 Camera</h2>
+    <div class="controls"><button class="tab" onclick="startCamera('mainCam')">Start Camera</button></div>
+    <video id="mainCam" class="video" autoplay playsinline></video>
+  </section>
+
+  <footer class="sub">Educational demo. Palmistry/health outputs are heuristic and not medical advice.</footer>
+</div>
+
+<script>
+/* ========= STARFIELD ========= */
+const sf=document.getElementById('starfield'), sctx=sf.getContext('2d');
+let stars=[]; function fit(){sf.width=innerWidth;sf.height=innerHeight;stars=Array.from({length:180},()=>({x:Math.random()*sf.width,y:Math.random()*sf.height,z:Math.random()*1.2+0.3,s:Math.random()*1.5+0.4}))}
+function loopStars(){sctx.clearRect(0,0,sf.width,sf.height);for(const st of stars){sctx.beginPath();sctx.fillStyle=`rgba(160,240,255,${0.12*st.z})`;sctx.arc(st.x,st.y,st.s,0,Math.PI*2);sctx.fill();st.y+=0.25*st.z;if(st.y>sf.height){st.y=0;st.x=Math.random()*sf.width}}requestAnimationFrame(loopStars)}
+fit();addEventListener('resize',fit);loopStars();
+
+/* ========= NAV ========= */
+function show(id){document.querySelectorAll('section.card').forEach(s=>s.style.display='none');document.getElementById(id).style.display='block'}
+
+/* ========= CAMERA ========= */
+async function startCamera(el){try{const v=document.getElementById(el);const stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480},audio:false});v.srcObject=stream;await v.play();}catch(e){alert('Camera error: '+e)}}
+function snapshot(videoId, canvasId){const v=document.getElementById(videoId);const c=document.getElementById(canvasId);c.width=v.videoWidth||640;c.height=v.videoHeight||480;c.getContext('2d').drawImage(v,0,0,c.width,c.height)}
+
+/* ========= PALMISTRY ========= */
+// Boy -> right hand; Girl -> left hand (instruction shown above).
+function capturePalm(){snapshot('palmVideo','palmCanvas');document.getElementById('palmInfo').innerHTML='<span class="sub">Captured. Click <b>Analyze</b> to compute line strengths.</span>'}
+function analyzePalm(){
+  const canvas=document.getElementById('palmCanvas');const ctx=canvas.getContext('2d');
+  if(!canvas.width||!canvas.height){alert('Capture palm first');return}
+  const w=canvas.width,h=canvas.height, img=ctx.getImageData(0,0,w,h), data=img.data;
+  // brightness & gray map
+  let sum=0; const gray=new Float32Array(w*h);
+  for(let i=0;i<data.length;i+=4){const v=(data[i]+data[i+1]+data[i+2])/3; sum+=v; gray[i/4]=v}
+  const avg=sum/(data.length/4), thr=avg*0.92;
+  let hEdge=0,vEdge=0;
+  for(let y=1;y<h-1;y++){for(let x=1;x<w-1;x++){const i=y*w+x;
+    const gx=(-gray[i-w-1]+gray[i-w+1]-2*gray[i-1]+2*gray[i+1]-gray[i+w-1]+gray[i+w+1]);
+    const gy=(-gray[i-w-1]-2*gray[i-w]-gray[i-w+1]+gray[i+w-1]+2*gray[i+w]+gray[i+w+1]);
+    hEdge+=Math.abs(gx); vEdge+=Math.abs(gy);
+  }}
+  const edge=(hEdge+vEdge)/(w*h);
+
+  // zones for lines
+  let heart=0, life=0, edu=0, money=0, love=0;
+  for(let y=0;y<h;y++){for(let x=0;x<w;x++){
+    const br=gray[y*w+x]; const dark=br<thr;
+    if(y<h*0.28 && dark) heart++;
+    if(y>h*0.5 && x<w*0.45 && dark) life++;
+    if(y>h*0.35 && y<h*0.62 && dark) edu++;
+    if(x>w*0.55 && y>h*0.55 && dark) money++;
+    if(y<h*0.32 && x>w*0.45 && dark) love++;
+  }}
+  const denom=w*h/50;
+  const pctHeart=clamp(Math.round((heart/denom)*100*0.65 + (edge/45)*18 + rand(-4,6)),5,98);
+  const pctLife =clamp(Math.round((life /denom)*100*0.70 + (edge/50)*14 + rand(-3,5)),5,98);
+  const pctEdu  =clamp(Math.round((edu  /denom)*100*0.60 + (avg/255)*10 + rand(-5,7)),5,98);
+  const pctMoney=clamp(Math.round((money/denom)*100*0.66 + (edge/55)*12 + rand(-4,6)),5,98);
+  const pctLove =clamp(Math.round((love /denom)*100*0.62 + (edge/60)*10 + rand(-5,6)),5,98);
+
+  // qualities & obstacles
+  const qs=[], obs=[];
+  if(pctHeart>70) qs.push('Warm and expressive with feelings'); else if(pctHeart>50) qs.push('Balanced emotions'); else obs.push('Practice emotional openness');
+  if(pctLife >70) qs.push('Energetic & resilient'); else if(pctLife>50) qs.push('Stable vitality'); else obs.push('Focus on sleep, hydration and routine');
+  if(pctEdu  >70) qs.push('Curious and fast learner'); else if(pctEdu>50) qs.push('Practical learner'); else obs.push('Build consistent study habits');
+  if(pctMoney>70) qs.push('Good money sense & opportunity spotting'); else if(pctMoney<45) obs.push('Budgeting & saving will help long-term');
+  if(pctLove >70) qs.push('Attractive warmth in relationships'); else if(pctLove<45) obs.push('Work on communication & trust');
+
+  const charType = pctEdu>65 && pctHeart>65 ? 'Empathic Explorer' :
+                   pctMoney>70 && pctLife>60 ? 'Driven Builder' :
+                   pctLove>70 ? 'Heart-Led Connector' : 'Thoughtful Realist';
+
+  // save to global so Mindset can fuse
+  window._lastPalm = {pctHeart,pctLife,pctEdu,pctMoney,pctLove,charType};
+
+  document.getElementById('palmInfo').innerHTML =
+    `<b>Line strengths</b><br>
+     Heart: <b>${pctHeart}%</b> · Life(Health): <b>${pctLife}%</b> · Education: <b>${pctEdu}%</b> · Money: <b>${pctMoney}%</b> · Love: <b>${pctLove}%</b><br>
+     <b>Qualities:</b> ${qs.join('; ')}<br>
+     <b>Obstacles:</b> ${obs.join('; ')||'None obvious'}<br>
+     <b>Character style:</b> ${charType}
+     <div class="sub">Method: brightness, edge density & zone line-likeness. Educational only.</div>`;
+
+  chart('palmChart','bar',{
+    labels:['Heart','Life','Education','Money','Love'],
+    datasets:[{label:'% Strength',data:[pctHeart,pctLife,pctEdu,pctMoney,pctLove],
+      backgroundColor:['#ff6b81','#21e6c1','#36a2eb','#fcd34d','#a78bfa']}]
+  },{scales:{y:{beginAtZero:true,max:100}}});
+}
+
+/* ========= EYESIGHT ========= */
+const eyeLetters=['E','F','P','T','O','Z','L','D','C','H','K','M'];
+let eyeRound=0, eyeCorrect=0, eyeTimes=[], eyeStart=0;
+function beginEyeTest(){eyeRound=0;eyeCorrect=0;eyeTimes=[];nextEye()}
+function nextEye(){ if(eyeRound>=7){finishEye();return}
+  eyeRound++; const L=eyeLetters[Math.floor(Math.random()*eyeLetters.length)];
+  const size=96-eyeRound*10;
+  document.getElementById('eyeArea').innerHTML=`<div style="text-align:center;font-size:${size}px;font-weight:900;letter-spacing:6px">${L}</div>
+    <div class="controls"><button class="tab" onclick="eyeAns(1)">I CAN SEE</button><button class="tab" onclick="eyeAns(0)">I CANNOT</button></div>`;
+  window._eyeLetter=L; eyeStart=Date.now();
+}
+function eyeAns(can){eyeTimes.push(Date.now()-eyeStart); if(can) eyeCorrect++; nextEye()}
+function finishEye(){
+  const acc=Math.round((eyeCorrect/eyeRound)*100);
+  const avg= Math.round(eyeTimes.reduce((a,b)=>a+b,0)/(eyeTimes.length||1));
+  // tendency: if last 2 (small) were wrong => minus; if mid slow but correct => plus
+  const minus = eyeCorrect < 5; // rough rule
+  const tendency = minus ? '− sight tendency (myopia-like)' : '＋ sight tendency (hyperopia-like)';
+  const acuity = clamp(Math.round(acc*0.92 + (100-avg)/7),10,99);
+  document.getElementById('eyeStats').innerHTML =
+    `Accuracy: <b>${acc}%</b> · Avg response: <b>${avg} ms</b> · Acuity: <b>${acuity}%</b><br>
+     Tendency: <b>${tendency}</b> (heuristic)`;
+  chart('eyeChart','doughnut',{
+    labels:['Acuity','Remaining'],
+    datasets:[{data:[acuity,100-acuity],backgroundColor:['#21e6c1','#e94560']}]
+  });
+}
+
+/* ========= MINDSET ========= */
+async function detectFaceEmotion(videoId='mindVideo'){
+  const vid=document.getElementById(videoId);
+  if(typeof FaceDetector!=='undefined'){try{
+    const det=new FaceDetector();const faces=await det.detect(vid);
+    if(faces&&faces.length){const f=faces[0];const ratio=f.boundingBox.width/(f.boundingBox.height+1);
+      const score=clamp(Math.round((1-Math.abs(ratio-0.9))*100),30,90);
+      document.getElementById('mindOut').innerHTML=`Face detected — mood score: <b>${score}%</b>`;
+      window._faceScore=score; return score;}
+    document.getElementById('mindOut').innerHTML='No face detected.'; return 50;
+  }catch(e){document.getElementById('mindOut').innerHTML='FaceDetector error — using neutral.';return 50}}
+  document.getElementById('mindOut').innerHTML='FaceDetector not supported — using neutral.'; return 50;
+}
+function runMindset(){
+  const name=(document.getElementById('mindName').value||'User').trim();
+  const stress=Number(document.getElementById('mindStress').value)||3;
+  const face=window._faceScore||55;
+  const palm=window._lastPalm||{pctHeart:60,pctLife:60,pctEdu:60,pctMoney:60,pctLove:60,charType:'—'};
+  const ns = name.toLowerCase().replace(/[^a-z]/g,'').split('').reduce((a,c)=>a+c.charCodeAt(0),0)%100;
+
+  // traits 0..100
+  const openness = clamp(Math.round(30 + (ns%40)*0.9 + palm.pctEdu*0.2 - stress*1 + (face-50)*0.2),5,95);
+  const discipline = clamp(Math.round(35 + (ns%20) + palm.pctMoney*0.15 + palm.pctLife*0.1 - stress*1),5,95);
+  const warmth = clamp(Math.round(30 + palm.pctHeart*0.35 + palm.pctLove*0.25 + (face-50)*0.5),5,95);
+  const drive   = clamp(Math.round(25 + palm.pctMoney*0.25 + palm.pctEdu*0.2 + palm.pctLife*0.25),5,95);
+  const steadiness = clamp(Math.round(30 + palm.pctLife*0.35 - stress*3),5,95);
+
+  chart('mindChart','radar',{labels:['Openness','Discipline','Warmth','Drive','Steadiness'],datasets:[
+    {label:name,data:[openness,discipline,warmth,drive,steadiness],
+     backgroundColor:'rgba(54,162,235,.25)',borderColor:'#36a2eb',pointBackgroundColor:'#36a2eb'}]},
+     {scales:{r:{angleLines:{color:'rgba(255,255,255,.08)'},grid:{color:'rgba(255,255,255,.08)'},suggestedMin:0,suggestedMax:100}}});
+
+  document.getElementById('mindOut').innerHTML =
+    `<b>${name}</b> — Character from palm & mood:<br>
+     Openness <b>${openness}%</b>, Discipline <b>${discipline}%</b>, Warmth <b>${warmth}%</b>, Drive <b>${drive}%</b>, Steadiness <b>${steadiness}%</b><br>
+     Palm type hint: <b>${palm.charType}</b>. <span class="sub">(Fused from palmistry + name stats + stress + mood)</span>`;
+}
+
+/* ========= FRIENDSHIP ========= */
+function runFriend(){
+  const a=(document.getElementById('fa').value||'A'), b=(document.getElementById('fb').value||'B');
+  const as=+document.getElementById('aSocial').value, bs=+document.getElementById('bSocial').value;
+  const ap=+document.getElementById('aPlan').value,   bp=+document.getElementById('bPlan').value;
+  const at=+document.getElementById('aTrust').value,  bt=+document.getElementById('bTrust').value;
+  const diffs=[Math.abs(as-bs),Math.abs(ap-bp),Math.abs(at-bt)];
+  const sim=Math.round(100*(1-(diffs.reduce((x,y)=>x+y,0)/(4*3))));
+  const initialBoost = (a.trim()[0]||'').toLowerCase()===(b.trim()[0]||'').toLowerCase()?5:0;
+  const final=Math.min(100,sim+initialBoost);
+
+  document.getElementById('friendOut').innerHTML=`<b>${a}</b> & <b>${b}</b> — Compatibility: <b>${final}%</b>`;
+  chart('friendChart','doughnut',{labels:['Compatibility','Other'],datasets:[{data:[final,100-final],backgroundColor:['#36a2eb','#aab7c4']}]});
+  chart('friendRadar','radar',{labels:['Social','Planning','Trust'],datasets:[
+    {label:a,data:[as,ap,at],backgroundColor:'rgba(99,102,241,.25)',borderColor:'#818cf8'},
+    {label:b,data:[bs,bp,bt],backgroundColor:'rgba(34,197,94,.25)',borderColor:'#34d399'},
+  ]},{scales:{r:{suggestedMin:0,suggestedMax:5,grid:{color:'rgba(255,255,255,.1)'}}}});
+}
+
+/* ========= HEALTH (PCOD + Pulse) ========= */
+let latestPulseBPM=null;
+async function startPulse(videoId='pcodPulseVideo',duration=12){
+  await startCamera(videoId);
+  const video=document.getElementById(videoId); const can=document.createElement('canvas');const ctx=can.getContext('2d');
+  const samples=[]; const t0=Date.now(); alert('Measuring pulse for ~'+duration+'s. Keep still & in good light.');
+  (function sample(){ if(video.videoWidth===0){requestAnimationFrame(sample);return}
+    can.width=video.videoWidth; can.height=video.videoHeight; ctx.drawImage(video,0,0,can.width,can.height);
+    const d=ctx.getImageData(0,0,can.width,can.height).data;
+    let sg=0,c=0; const sx=can.width*.4, sy=can.height*.4, sw=can.width*.2, sh=can.height*.2;
+    for(let y=sy;y<sy+sh;y+=3) for(let x=sx;x<sx+sw;x+=3){ const i=(y*can.width+x)*4; sg+=d[i+1]; c++; }
+    samples.push({t:Date.now(),v:sg/c}); if(Date.now()-t0<duration*1000) requestAnimationFrame(sample);
+    else{ // process
+      const vals=samples.map(s=>s.v); const w=4; const smooth=vals.map((v,i)=>{let s=0,n=0;for(let j=i-w;j<=i+w;j++) if(j>=0&&j<vals.length){s+=vals[j];n++}return s/n});
+      const mx=Math.max(...smooth), mn=Math.min(...smooth), thr=mn+(mx-mn)*.5; const peaks=[];
+      for(let i=2;i<smooth.length-2;i++){ if(smooth[i]>thr && smooth[i]>smooth[i-1] && smooth[i]>smooth[i+1]) if(peaks.length===0||i-peaks[peaks.length-1]>6) peaks.push(i) }
+      latestPulseBPM=Math.round((peaks.length/duration)*60)||Math.round(60+Math.random()*8);
+      document.getElementById('pcodOut').innerHTML=(document.getElementById('pcodOut').innerHTML||'')+`<br><b>Pulse:</b> ${latestPulseBPM} bpm (approx)`;
+    }
+  })();
+}
+function runPCOD(){
+  const name=document.getElementById('pcodName').value||'Patient';
+  const age=+document.getElementById('pcodAge').value||25;
+  const bmi=+document.getElementById('pcodBMI').value||22;
+  const cycle=document.getElementById('pcodCycle').value;
+  const s1=document.getElementById('pcodSym1').checked?1:0;
+  const s2=document.getElementById('pcodSym2').checked?1:0;
+  const s3=document.getElementById('pcodSym3').checked?1:0;
+  let score=s1*35+s2*25+s3*20+(bmi>25?10:0)+(age>30?5:0)+(cycle==='irregular'?12:0);
+  if(latestPulseBPM){ if(latestPulseBPM>85) score+=6; else if(latestPulseBPM>75) score+=3; }
+  score=clamp(Math.round(score+rand(-4,4)),5,95);
+  const risk= score>60?'High':(score>35?'Moderate':'Low');
+  const advice=['Lower refined carbs; add protein & fiber.','Exercise 30–45 min, 4–5×/week.','Sleep 7–8h, consistent time.'];
+  if(score>60) advice.unshift('Consult gynecologist for tests & guidance.');
+  document.getElementById('pcodOut').innerHTML=`<b>${name}</b> — PCOD probability: <b>${score}%</b> <span class="badge">${risk}</span><ul>${advice.map(a=>`<li>${a}</li>`).join('')}</ul>`;
+  chart('pcodChart','polarArea',{labels:['Risk Score','Buffer'],datasets:[{data:[score,100-score],backgroundColor:['#e94560','#21e6c1']}]});
+}
+
+/* ========= LOVE % ========= */
+function runLove(){
+  const a=(document.getElementById('loveA').value||'sara').toLowerCase();
+  const b=(document.getElementById('loveB').value||'meera').toLowerCase();
+  const clean=s=>s.replace(/[^a-z]/g,'');
+  const A=clean(a), B=clean(b);
+  const lenRatio=Math.round(100*(Math.min(A.length,B.length)/(Math.max(A.length,B.length)||1)));
+  const shared=[...new Set(A)].filter(c=>B.includes(c)).length*12;
+  const vowels='aeiou'; const vA=[...A].filter(c=>vowels.includes(c)).length, vB=[...B].filter(c=>vowels.includes(c)).length;
+  const vowelHarmony=100-(Math.abs(vA-vB)*12);
+  const lenPenalty=100-(Math.abs(A.length-B.length)*10);
+  const posScore = ([...A].reduce((s,c)=>s+c.charCodeAt(0),0)+[...B].reduce((s,c)=>s+c.charCodeAt(0),0))%100;
+  let score=Math.round((lenRatio*.2)+(shared*.25)+(vowelHarmony*.2)+(lenPenalty*.15)+(posScore*.2));
+  score=clamp(score+rand(-3,5),5,99);
+  const msg = score>85?'A magical bond! ✨💖':score>65?'Great potential! 💫':score>45?'Promising with effort 🤝':'Needs patience and understanding 🌱';
+  document.getElementById('loveOut').innerHTML=`<div style="font-size:28px"><b>${score}%</b> compatibility</div><div>${msg}</div>`;
+  chart('loveBars','bar',{labels:['LenRatio','SharedLetters','VowelHarmony','LenPenalty','PosScore'],datasets:[{data:[lenRatio,shared,vowelHarmony,lenPenalty,posScore],backgroundColor:'#60a5fa'}]},{scales:{y:{beginAtZero:true,max:100}}});
+  chart('loveDonut','doughnut',{labels:['Compatibility','Remaining'],datasets:[{data:[score,100-score],backgroundColor:['#3b82f6','#fb7185']}]});
+  document.getElementById('loveSteps').innerHTML=
+    `🧩 Steps:<br>• Cleaned names → <b>${A}</b> & <b>${B}</b>.<br>
+     • Length ratio: <b>${lenRatio}</b>. Shared unique letters: <b>${shared/12}</b>×12.<br>
+     • Vowel harmony: <b>${vowelHarmony}</b>. Length penalty: <b>${lenPenalty}</b>. PosScore: <b>${posScore}</b>.`;
+}
+function randLove(){const n=['sara','meera','rahul','ananya','arjun','riya','vikram','isha']; const a=n[Math.floor(Math.random()*n.length)], b=n[Math.floor(Math.random()*n.length)]; document.getElementById('loveA').value=a; document.getElementById('loveB').value=b; runLove();}
+
+/* ========= GAMES ========= */
+// Hand Gesture (motion score)
+let gestRAF=null, gestLast=null, gestPoints=0;
+async function startGestureGame(){
+  await startCamera('gestVid'); gestPoints=0; document.getElementById('gestScore').innerText=gestPoints;
+  const vid=document.getElementById('gestVid'); const can=document.createElement('canvas'); const ctx=can.getContext('2d');
+  function step(){
+    if(vid.videoWidth===0){gestRAF=requestAnimationFrame(step);return}
+    can.width=vid.videoWidth; can.height=vid.videoHeight; ctx.drawImage(vid,0,0,can.width,can.height);
+    const img=ctx.getImageData(0,0,can.width,can.height);
+    if(gestLast){
+      let diff=0; for(let i=0;i<img.data.length;i+=10){diff += Math.abs(img.data[i]-gestLast.data[i])}
+      if(diff>800000){gestPoints++; document.getElementById('gestScore').innerText=gestPoints}
+    }
+    gestLast=img; gestRAF=requestAnimationFrame(step);
+  } step();
+}
+// Memory
+let memCards=[], memOpen=[], memLock=false;
+function resetMemory(){
+  const icons=['🍎','🍋','🍇','🍓','🍒','🍉','🥝','🍍']; memCards=[...icons,...icons].sort(()=>Math.random()-0.5);
+  const g=document.getElementById('memGrid'); g.innerHTML='';
+  memCards.forEach((ic,idx)=>{const b=document.createElement('button'); b.className='tab'; b.style.height='56px'; b.textContent='?'; b.onclick=()=>flip(idx,b); g.appendChild(b);});
+  memOpen=[]; memLock=false;
+}
+function flip(i,btn){ if(memLock||btn.dataset.ok) return; btn.textContent=memCards[i]; if(memOpen.length && memOpen[0].i===i) return; memOpen.push({i,btn}); if(memOpen.length===2){memLock=true; setTimeout(()=>{ if(memCards[memOpen[0].i]===memCards[memOpen[1].i]){ memOpen.forEach(o=>{o.btn.dataset.ok=1; o.btn.style.background='#21e6c1';}); } else { memOpen.forEach(o=>o.btn.textContent='?'); } memOpen=[]; memLock=false;},500) } }
+// Math Quiz
+let mqT=30, mqScore=0, mqTimer=null, mqAns, mqA,mqB,mqOp;
+function startMQ(){mqT=30;mqScore=0;document.getElementById('mqTime').innerText=mqT;document.getElementById('mqScore').innerText=mqScore; nextQ(); clearInterval(mqTimer); mqTimer=setInterval(()=>{mqT--; document.getElementById('mqTime').innerText=mqT; if(mqT<=0){clearInterval(mqTimer); document.getElementById('mqQ').innerHTML='Time!';}},1000)}
+function nextQ(){mqA=Math.floor(Math.random()*10)+1; mqB=Math.floor(Math.random()*10)+1; mqOp=['+','-','×'][Math.floor(Math.random()*3)]; document.getElementById('mqQ').innerHTML=`${mqA} ${mqOp} ${mqB} = ?`; mqAns=document.getElementById('mqAns'); mqAns.value=''; mqAns.onkeydown=(e)=>{ if(e.key==='Enter'){ const val=Number(mqAns.value); const ans = mqOp==='+'? mqA+mqB : mqOp==='-'? mqA-mqB : mqA*mqB; if(val===ans){ mqScore++; document.getElementById('mqScore').innerText=mqScore; } nextQ(); }} }
+// Dodge Ball
+function startDodge(){
+  const c=document.getElementById('dodgeCanvas'), ctx=c.getContext('2d'); const W=c.width,H=c.height;
+  let p={x:W/2-20,y:H-28,w:40,h:12,s:8}, balls=[], score=0, run=true, keys={};
+  function sp(){balls.push({x:Math.random()*(W-20)+10,y:-10,r:7+Math.random()*12,vy:2+Math.random()*3,color:`hsl(${Math.random()*360},80%,60%)`})}
+  let t=0; addEventListener('keydown',e=>keys[e.key]=true); addEventListener('keyup',e=>keys[e.key]=false);
+  function tick(){ if(!run) return; ctx.clearRect(0,0,W,H); ctx.fillStyle='#06121a'; ctx.fillRect(0,0,W,H);
+    if(keys['ArrowLeft']) p.x-=p.s; if(keys['ArrowRight']) p.x+=p.s; p.x=clamp(p.x,0,W-p.w); ctx.fillStyle='#06b6d4'; ctx.fillRect(p.x,p.y,p.w,p.h);
+    if(++t>34){t=0;sp()} balls.forEach((b,i)=>{b.y+=b.vy; ctx.beginPath(); ctx.fillStyle=b.color; ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
+      if(b.x+b.r>p.x && b.x-b.r<p.x+p.w && b.y+b.r>p.y && b.y-b.r<p.y+p.h){ run=false; } if(b.y-b.r>H){balls.splice(i,1); score++; document.getElementById('dodgeScore').innerText=score;}
+    });
+    if(run) requestAnimationFrame(tick); else { ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(0,0,W,H); ctx.fillStyle='#ff7777'; ctx.font='28px sans-serif'; ctx.fillText('GAME OVER',W/2-90,H/2-10); }
+  } tick();
+}
+// SOS
+let sos={size:5,grid:[],score:{p:0,ai:0}};
+function resetSOS(){const n=sos.size; sos.grid=Array.from({length:n},()=>Array.from({length:n},()=>'')); const t=document.getElementById('sosGrid'); t.innerHTML=''; for(let r=0;r<n;r++){const tr=document.createElement('tr'); for(let c=0;c<n;c++){const td=document.createElement('td'); td.onclick=()=>sosPlace(r,c); tr.appendChild(td)} t.appendChild(tr)} sos.score={p:0,ai:0}; document.getElementById('sosResult').innerText='Player:0 | Computer:0'}
+function sosPlace(r,c){if(sos.grid[r][c])return; const sym=document.getElementById('sosSymbol').value; sos.grid[r][c]=sym; renderSOS(); let g=countSOS(); if(g>0){sos.score.p+=g; updSOS()}
+ setTimeout(()=>{ // AI
+   for(let r=0;r<sos.size;r++)for(let c=0;c<sos.size;c++) if(!sos.grid[r][c]){ for(const s of ['S','O']){sos.grid[r][c]=s; if(countSOS()>0){renderSOS(); sos.score.ai+=countSOS(); updSOS(); return;} sos.grid[r][c]='';}}
+   const free=[]; for(let r=0;r<sos.size;r++)for(let c=0;c<sos.size;c++) if(!sos.grid[r][c]) free.push([r,c]);
+   if(free.length){const [rr,cc]=free[Math.floor(Math.random()*free.length)]; sos.grid[rr][cc]=Math.random()<0.6?'S':'O'; renderSOS(); let g=countSOS(); if(g>0){sos.score.ai+=g; updSOS();}}
+ },250)}
+function renderSOS(){const t=document.getElementById('sosGrid'); for(let r=0;r<sos.size;r++) for(let c=0;c<sos.size;c++) t.rows[r].cells[c].innerText=sos.grid[r][c]||''}
+function countSOS(){let ct=0,n=sos.size; for(let r=0;r<n;r++)for(let c=0;c<n;c++){ if(c+2<n && sos.grid[r][c]=='S'&&sos.grid[r][c+1]=='O'&&sos.grid[r][c+2]=='S') ct++; if(r+2<n && sos.grid[r][c]=='S'&&sos.grid[r+1][c]=='O'&&sos.grid[r+2][c]=='S') ct++; if(r+2<n&&c+2<n && sos.grid[r][c]=='S'&&sos.grid[r+1][c+1]=='O'&&sos.grid[r+2][c+2]=='S') ct++; if(r+2<n&&c-2>=0 && sos.grid[r][c]=='S'&&sos.grid[r+1][c-1]=='O'&&sos.grid[r+2][c-2]=='S') ct++; } return ct;}
+function updSOS(){document.getElementById('sosResult').innerText=`Player:${sos.score.p} | Computer:${sos.score.ai}`}
+resetSOS();
+// Candy Catch
+function startCandy(){
+  const c=document.getElementById('candyCanvas'), ctx=c.getContext('2d'); let candies=[],score=0,run=true; document.getElementById('candyScore').innerText=0;
+  c.onclick=e=>{const r=c.getBoundingClientRect(); const x=e.clientX-r.left, y=e.clientY-r.top; for(let i=candies.length-1;i>=0;i--){const a=candies[i]; const d=Math.hypot(a.x-x,a.y-y); if(d<a.r+6){candies.splice(i,1); score++; document.getElementById('candyScore').innerText=score;}}}
+  function spawn(){candies.push({x:Math.random()*c.width,y:-10,r:6+Math.random()*10,s:1.5+Math.random()*2,color:`hsl(${Math.random()*360},80%,60%)`})}
+  let t=0; (function loop(){if(!run)return; ctx.clearRect(0,0,c.width,c.height); if(++t>20){t=0;spawn()} candies.forEach((a,i)=>{a.y+=a.s; ctx.beginPath(); ctx.fillStyle=a.color; ctx.arc(a.x,a.y,a.r,0,Math.PI*2); ctx.fill(); if(a.y-a.r>c.height) candies.splice(i,1)}); requestAnimationFrame(loop)})()
+}
+// Robot Maze
+function startRobot(){
+  const c=document.getElementById('robotCanvas'), ctx=c.getContext('2d'); const W=c.width,H=c.height, grid=12, cs=Math.floor(W/grid);
+  const walls=new Set(); for(let i=0;i<60;i++){walls.add(Math.floor(Math.random()*grid)+','+Math.floor(Math.random()*grid))}
+  let me={x:0,y:0}, goal={x:grid-1,y:grid-1}; function draw(){ctx.clearRect(0,0,W,H); for(let y=0;y<grid;y++)for(let x=0;x<grid;x++){ctx.fillStyle='#0b1f33'; ctx.fillRect(x*cs,y*cs,cs-2,cs-2); if(walls.has(x+','+y)) {ctx.fillStyle='#0f2f4f'; ctx.fillRect(x*cs,y*cs,cs-2,cs-2);} } ctx.fillStyle='#21e6c1'; ctx.fillRect(me.x*cs,me.y*cs,cs-2,cs-2); ctx.fillStyle='#fcd34d'; ctx.fillRect(goal.x*cs,goal.y*cs,cs-2,cs-2); }
+  function move(dx,dy){const nx=clamp(me.x+dx,0,grid-1), ny=clamp(me.y+dy,0,grid-1); if(!walls.has(nx+','+ny)) {me.x=nx;me.y=ny; if(me.x===goal.x&&me.y===goal.y) alert('Robot reached goal!'); draw();}}
+  draw(); function key(e){if(e.key==='ArrowLeft')move(-1,0); if(e.key==='ArrowRight')move(1,0); if(e.key==='ArrowUp')move(0,-1); if(e.key==='ArrowDown')move(0,1);} addEventListener('keydown',key,{once:false});
+}
+// Ludo (linear race 1×1)
+let ludoPosMe=0,ludoPosAI=0, ludoLen=40;
+function renderLudo(){const b=document.getElementById('ludoBoard'); b.innerHTML=''; for(let i=0;i<ludoLen;i++){const d=document.createElement('div'); if(i===ludoPosMe) d.classList.add('me'); if(i===ludoPosAI) d.classList.add('ai'); b.appendChild(d)} document.getElementById('ludoOut').innerHTML=`You: ${ludoPosMe}/${ludoLen-1} · AI: ${ludoPosAI}/${ludoLen-1}`;}
+function rollLudo(){const d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6); document.getElementById('ludoDice').innerText=`You ${d1}, AI ${d2}`; ludoPosMe=Math.min(ludoLen-1,ludoPosMe+d1); ludoPosAI=Math.min(ludoLen-1,ludoPosAI+d2); renderLudo(); if(ludoPosMe===ludoLen-1||ludoPosAI===ludoLen-1) document.getElementById('ludoOut').innerHTML += '<br><b>'+ (ludoPosMe===ludoLen-1?'You win!':'AI wins!') +'</b>';}
+renderLudo();
+// Horror Hunt
+let hhWord=''; function startHorror(){const pool=['NOCTUA','UMBRA','LILITH','MORROW','OBSCURA','TENEBRA']; hhWord=pool[Math.floor(Math.random()*pool.length)]; document.getElementById('hhPrompt').innerHTML='👻 Ghost name: <b>'+hhWord+'</b> (type to banish)'; document.getElementById('hhInput').value=''; document.getElementById('hhOut').innerHTML='';}
+function checkHorror(e){if((e.target.value||'').toUpperCase()===hhWord){document.getElementById('hhOut').innerHTML='✨ Banished!';}}
+
+//// ======= CHART HELPER =======
+function chart(id,type,data,options={}){const ctx=document.getElementById(id).getContext('2d'); if(window['ch_'+id]) window['ch_'+id].destroy(); window['ch_'+id]=new Chart(ctx,{type,data,options:Object.assign({responsive:true,plugins:{legend:{labels:{color:'#cfe7f5'}}}},options)})}
+
+//// ======= UTILS =======
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function rand(a,b){return Math.round(Math.random()*(b-a))+a}
+
+</script>
+</body>
+</html>
